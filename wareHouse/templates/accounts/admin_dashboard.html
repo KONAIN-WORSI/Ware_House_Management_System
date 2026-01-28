@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Admin Dashboard</h1>
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Administrator Access</h4>
+            <p>You have full access to the system.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Manage Users</h5>
+                        <p class="card-text">Add, edit, or remove users.</p>
+                        <a href="/admin/" class="btn btn-primary">Go to Admin Panel</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Add more admin widgets here -->
+        </div>
+    </div>
+</div>
+{% endblock %}

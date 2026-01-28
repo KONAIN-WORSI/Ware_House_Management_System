@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Staff Dashboard</h1>
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Staff Access</h4>
+            <p>You can view assigned tasks and update status.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">My Tasks</h5>
+                        <p class="card-text">View your daily tasks.</p>
+                        <a href="#" class="btn btn-info">View Tasks</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

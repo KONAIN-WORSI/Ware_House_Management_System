@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Manager Dashboard</h1>
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">Manager Access</h4>
+            <p>You can manage warehouse operations.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Inventory</h5>
+                        <p class="card-text">Manage stock levels.</p>
+                        <a href="#" class="btn btn-warning">View Inventory</a>
+                    </div>
+                </div>
+            </div>
+             <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Orders</h5>
+                        <p class="card-text">Process orders.</p>
+                        <a href="#" class="btn btn-warning">View Orders</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
