@@ -38,4 +38,69 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ['name', 'sku', 'barcode']
     prepopulated_fields = {'slug': ('name',)}
 
-    
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'image_preview']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'slug', 'sku', 'barcode', 'category')
+        }),
+        ('Description', {
+            'fields': ('description',)
+        }),
+        ('Pricing', {
+            'fields': ('purchase_price', 'selling_price', 'unit')
+        }),
+        ('Stock Management', {
+            'fields': ('reorder_level', 'shelf_life_days')
+        }),
+        ('Image', {
+            'fields': ('image', 'image_preview')
+        }),
+        ('Status', {
+            'fields': ('status', 'is_active')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at', 'created_by'),
+            'classes': ('collapse',)
+        })
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', obj.image.url)
+        return 'No Image'
+    image_preview.short_description = 'Image Preview'
+
+    def profit_display(self, obj):
+        profit = obj.profit_amount
+        margin = obj.profit_margin
+
+        if profit > 0:
+            return format_html(
+                '<span style="color: green;">{:.2f} ({:.2f}%)</span>',
+                profit, margin
+            )
+        return format_html(
+            '<span style="color: red;">{:.2f} ({:.2f}%)</span>',
+            profit
+        )
+    profit_display.short_description = 'Profit'
+
+    def status_badge(self, obj):
+        colors = {
+            'active': 'green',
+            'inactive': 'orange',
+            'disconnected': 'red'
+        }
+
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 4px 8px; border-radius: 4px;">{}</span>',
+            colors.get(obj.status, 'gray'),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Status'

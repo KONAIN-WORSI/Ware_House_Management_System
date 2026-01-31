@@ -111,7 +111,7 @@ class Product(models.Model):
     )
 
     # status
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='active')
     is_active = models.BooleanField(default=True)
 
     # metadata
