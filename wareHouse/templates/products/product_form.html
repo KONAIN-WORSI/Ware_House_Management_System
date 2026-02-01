@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'products:product_list' %}">Products</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4><i class="fas fa-box"></i> {{ title }}</h4>
+                <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" enctype="multipart/form-data" id="productForm">
+                {% csrf_token %}
+                
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Basic Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Product Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">SKU (Stock Keeping Unit) *</label>
+                                {{ form.sku }}
+                                {% if form.sku.errors %}
+                                    <div class="text-danger small mt-1">{{ form.sku.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">e.g., VEG-001, FRT-102</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Barcode</label>
+                                {{ form.barcode }}
+                                {% if form.barcode.errors %}
+                                    <div class="text-danger small mt-1">{{ form.barcode.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Category *</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="text-danger small mt-1">{{ form.category.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    <a href="{% url 'products:category_create' %}" target="_blank">Add new category</a>
+                                </small>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pricing Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-rupee-sign"></i> Pricing Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Purchase Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    {{ form.purchase_price }}
+                                </div>
+                                {% if form.purchase_price.errors %}
+                                    <div class="text-danger small mt-1">{{ form.purchase_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Selling Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    {{ form.selling_price }}
+                                </div>
+                                {% if form.selling_price.errors %}
+                                    <div class="text-danger small mt-1">{{ form.selling_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Unit of Measure *</label>
+                                {{ form.unit }}
+                                {% if form.unit.errors %}
+                                    <div class="text-danger small mt-1">{{ form.unit.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12">
+                                <div id="profitDisplay" class="alert alert-info" style="display: none;">
+                                    <strong>Profit Calculation:</strong>
+                                    <span id="profitAmount"></span> per unit
+                                    (<span id="profitMargin"></span>% margin)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stock Management -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-warehouse"></i> Stock Management</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Reorder Level *</label>
+                                {{ form.reorder_level }}
+                                {% if form.reorder_level.errors %}
+                                    <div class="text-danger small mt-1">{{ form.reorder_level.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Minimum stock before reorder alert</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Shelf Life (Days)</label>
+                                {{ form.shelf_life_days }}
+                                {% if form.shelf_life_days.errors %}
+                                    <div class="text-danger small mt-1">{{ form.shelf_life_days.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">For perishable items only</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Product Image & Status -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-image"></i> Image & Status</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Product Image</label>
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                    <div class="text-danger small mt-1">{{ form.image.errors }}</div>
+                                {% endif %}
+                                
+                                {% if product and product.image %}
+                                <div class="mt-2">
+                                    <img src="{{ product.image.url }}" 
+                                         alt="{{ product.name }}" 
+                                         class="img-thumbnail"
+                                         style="max-width: 200px;">
+                                    <p class="small text-muted mt-1">Current image (upload new to replace)</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Status *</label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="text-danger small mt-1">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'products:product_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calculate profit in real-time
+    function calculateProfit() {
+        const purchasePrice = parseFloat(document.querySelector('[name="purchase_price"]').value) || 0;
+        const sellingPrice = parseFloat(document.querySelector('[name="selling_price"]').value) || 0;
+        
+        if (purchasePrice > 0 && sellingPrice > 0) {
+            const profitAmount = (sellingPrice - purchasePrice).toFixed(3);
+            const profitMargin = ((profitAmount / purchasePrice) * 100).toFixed(2);
+            
+            document.getElementById('profitAmount').textContent = '₹' + profitAmount;
+            document.getElementById('profitMargin').textContent = profitMargin + '%';
+            document.getElementById('profitDisplay').style.display = 'block';
+            
+            // Change color based on profit
+            const alertBox = document.getElementById('profitDisplay');
+            if (parseFloat(profitAmount) > 0) {
+                alertBox.className = 'alert alert-success';
+            } else {
+                alertBox.className = 'alert alert-danger';
+            }
+        } else {
+            document.getElementById('profitDisplay').style.display = 'none';
+        }
+    }
+
+    // Add event listeners
+    document.querySelector('[name="purchase_price"]').addEventListener('input', calculateProfit);
+    document.querySelector('[name="selling_price"]').addEventListener('input', calculateProfit);
+
+    // Calculate on page load if values exist
+    calculateProfit();
+
+    // Image preview
+    document.querySelector('[name="image"]').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const preview = document.createElement('img');
+                preview.src = e.target.result;
+                preview.className = 'img-thumbnail mt-2';
+                preview.style.maxWidth = '200px';
+                
+                // Remove old preview if exists
+                const oldPreview = document.querySelector('.image-preview');
+                if (oldPreview) oldPreview.remove();
+                
+                preview.className += ' image-preview';
+                e.target.parentElement.appendChild(preview);
+            };
+            
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+</script>
+{% endblock %}

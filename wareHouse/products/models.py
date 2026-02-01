@@ -96,7 +96,7 @@ class Product(models.Model):
     )
 
     # shelf life (for perishable items)
-    shelf_life = models.IntegerField(
+    shelf_life_days = models.IntegerField(
         blank=True,
         null=True,
         validators=[MinValueValidator(1)],
