@@ -28,7 +28,6 @@ class ProductAdmin(admin.ModelAdmin):
         'category',
         'purchase_price',
         'selling_price',
-        'profit_display',
         'unit',
         'status_badge',
         'created_at'
