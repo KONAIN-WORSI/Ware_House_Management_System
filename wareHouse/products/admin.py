@@ -28,6 +28,7 @@ class ProductAdmin(admin.ModelAdmin):
         'category',
         'purchase_price',
         'selling_price',
+        'profit_display',
         'unit',
         'status_badge',
         'created_at'
@@ -76,17 +77,26 @@ class ProductAdmin(admin.ModelAdmin):
     image_preview.short_description = 'Image Preview'
 
     def profit_display(self, obj):
-        profit = obj.profit_amount
-        margin = obj.profit_margin
+        # Ensure values exist
+        if obj.purchase_price is None or obj.selling_price is None:
+            return 'N/A'
+
+        profit = obj.selling_price - obj.purchase_price
+        
+        # Calculate margin based on purchase price (Markup) to match Model/JS logic
+        if obj.purchase_price > 0:
+            margin = (profit / obj.purchase_price) * 100
+        else:
+            margin = 0
 
         if profit > 0:
             return format_html(
-                '<span style="color: green;">{:.2f} ({:.2f}%)</span>',
-                profit, margin
+                '<span style="color: green;">{} ({}%)</span>',
+                "{:.2f}".format(profit), "{:.2f}".format(margin)
             )
         return format_html(
-            '<span style="color: red;">{:.2f} ({:.2f}%)</span>',
-            profit
+            '<span style="color: red;">{} ({}%)</span>',
+            "{:.2f}".format(profit), "{:.2f}".format(margin)
         )
     profit_display.short_description = 'Profit'
 
