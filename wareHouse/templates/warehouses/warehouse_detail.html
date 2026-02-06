@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ warehouse.name }} - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'warehouses:warehouse_list' %}">Warehouses</a></li>
+<li class="breadcrumb-item active">{{ warehouse.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-warehouse"></i> {{ warehouse.name }}</h2>
+        <p class="text-muted">Code: <code>{{ warehouse.code }}</code></p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'warehouses:warehouse_update' warehouse.pk %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'warehouses:warehouse_delete' warehouse.pk %}" 
+           class="btn btn-danger"
+           onclick="return confirm('Are you sure?')">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+        <a href="{% url 'warehouses:warehouse_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h5 class="mb-1">Total Capacity</h5>
+            <h3 class="mb-0">{{ warehouse.total_capacity }} m²</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h5 class="mb-1">Storage Zones</h5>
+            <h3 class="mb-0">{{ zones.count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <h5 class="mb-1">Locations</h5>
+            <h3 class="mb-0">{{ warehouse.get_total_locations }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <h5 class="mb-1">Capacity Used</h5>
+            <h3 class="mb-0">{{ warehouse.capacity_percentage|floatformat:1 }}%</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Warehouse Information -->
+    <div class="col-lg-8">
+        <!-- Basic Info -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-info-circle"></i> Warehouse Information</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Warehouse Name</label>
+                    <p class="mb-0"><strong>{{ warehouse.name }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Warehouse Code</label>
+                    <p class="mb-0"><code>{{ warehouse.code }}</code></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Status</label>
+                    <p class="mb-0">
+                        {% if warehouse.status == 'active' %}
+                        <span class="badge bg-success">{{ warehouse.get_status_display }}</span>
+                        {% elif warehouse.status == 'inactive' %}
+                        <span class="badge bg-secondary">{{ warehouse.get_status_display }}</span>
+                        {% else %}
+                        <span class="badge bg-warning">{{ warehouse.get_status_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Manager</label>
+                    <p class="mb-0">
+                        {% if warehouse.manager %}
+                        <strong>{{ warehouse.manager.get_full_name }}</strong>
+                        {% else %}
+                        <span class="text-muted">Not assigned</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if warehouse.description %}
+                <div class="col-12">
+                    <label class="text-muted small">Description</label>
+                    <p class="mb-0">{{ warehouse.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Location Details -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-map-marker-alt"></i> Location Details</h5>
+            
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="text-muted small">Address</label>
+                    <p class="mb-0">{{ warehouse.address }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">City</label>
+                    <p class="mb-0"><strong>{{ warehouse.city }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">State/Province</label>
+                    <p class="mb-0"><strong>{{ warehouse.state }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Postal Code</label>
+                    <p class="mb-0">{{ warehouse.postal_code }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Country</label>
+                    <p class="mb-0">{{ warehouse.country }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Information -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-phone"></i> Contact Information</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Phone</label>
+                    <p class="mb-0"><strong>{{ warehouse.phone }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Email</label>
+                    <p class="mb-0">
+                        {% if warehouse.email %}
+                        <a href="mailto:{{ warehouse.email }}">{{ warehouse.email }}</a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Storage Zones -->
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-layer-group"></i> Storage Zones</h5>
+                <a href="{% url 'warehouses:zone_create' warehouse.pk %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Add Zone
+                </a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Zone Name</th>
+                            <th>Code</th>
+                            <th>Type</th>
+                            <th>Capacity</th>
+                            <th>Temperature</th>
+                            <th>Locations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for zone in zones %}
+                        <tr>
+                            <td><strong>{{ zone.name }}</strong></td>
+                            <td><code>{{ zone.code }}</code></td>
+                            <td><span class="badge bg-info">{{ zone.get_zone_type_display }}</span></td>
+                            <td>{{ zone.capacity }} m²</td>
+                            <td>
+                                {% if zone.temperature_min and zone.temperature_max %}
+                                {{ zone.temperature_min }}°C - {{ zone.temperature_max }}°C
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ zone.get_total_locations }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No zones created yet
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Capacity Widget -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-chart-pie"></i> Capacity Overview</h5>
+            
+            <div class="text-center mb-3">
+                <canvas id="capacityChart" height="200"></canvas>
+            </div>
+            
+            <div class="row g-2 text-center">
+                <div class="col-6">
+                    <div class="bg-light rounded p-2">
+                        <small class="text-muted">Available</small>
+                        <h6 class="mb-0 text-success">{{ warehouse.get_available_capacity|floatformat:2 }} m²</h6>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-light rounded p-2">
+                        <small class="text-muted">Occupied</small>
+                        <h6 class="mb-0 text-danger">{{ warehouse.get_occupied_capacity|floatformat:2 }} m²</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Locations -->
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-map-marker-alt"></i> Storage Locations</h5>
+            
+            <div class="list-group list-group-flush">
+                {% for location in locations %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ location.code }}</strong><br>
+                            <small class="text-muted">{{ location.get_display_name }}</small>
+                        </div>
+                        <div>
+                            {% if location.is_occupied %}
+                            <span class="badge bg-danger">Occupied</span>
+                            {% else %}
+                            <span class="badge bg-success">Available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No locations yet</p>
+                {% endfor %}
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{% url 'warehouses:location_list' %}?warehouse={{ warehouse.id }}" class="btn btn-sm btn-outline-primary">
+                    View All Locations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Capacity Chart
+    const ctx = document.getElementById('capacityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Occupied', 'Available'],
+            datasets: [{
+                data: [
+                    {{ warehouse.get_occupied_capacity }},
+                    {{ warehouse.get_available_capacity }}
+                ],
+                backgroundColor: ['#dc3545', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

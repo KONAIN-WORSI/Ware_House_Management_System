@@ -40,7 +40,7 @@ class Warehouse(models.Model):
         null=True,
         blank=True,
         related_name='managed_warehouses',
-        limit_choices_to={'role_in': ['admin', 'manager']}
+        limit_choices_to={'role__in': ['admin', 'manager']}
     )
 
     # capacity 
@@ -89,11 +89,11 @@ class Warehouse(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.code)
         super().save(*args, **kwargs)
 
     def get_total_locations(self):
-        return self.locations.count()
+        return self.storage_locations.count()
 
     def get_occupied_capacity(self):
         return 0

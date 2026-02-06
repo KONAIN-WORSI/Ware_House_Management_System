@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'warehouses:warehouse_list' %}">Warehouses</a></li>
+<li class="breadcrumb-item"><a href="{% url 'warehouses:location_list' %}">Locations</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4><i class="fas fa-map-marker-alt"></i> {{ title }}</h4>
+                <a href="{% url 'warehouses:location_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-warehouse"></i> Location Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Warehouse *</label>
+                                {{ form.warehouse }}
+                                {% if form.warehouse.errors %}
+                                    <div class="text-danger small mt-1">{{ form.warehouse.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Zone</label>
+                                {{ form.zone }}
+                                {% if form.zone.errors %}
+                                    <div class="text-danger small mt-1">{{ form.zone.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Location Code *</label>
+                                {{ form.code }}
+                                {% if form.code.errors %}
+                                    <div class="text-danger small mt-1">{{ form.code.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Capacity (kg) *</label>
+                                {{ form.capacity }}
+                                {% if form.capacity.errors %}
+                                    <div class="text-danger small mt-1">{{ form.capacity.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-th"></i> Coordinates</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Aisle</label>
+                                {{ form.aisle }}
+                                {% if form.aisle.errors %}
+                                    <div class="text-danger small mt-1">{{ form.aisle.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label">Rack</label>
+                                {{ form.rack }}
+                                {% if form.rack.errors %}
+                                    <div class="text-danger small mt-1">{{ form.rack.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Shelf</label>
+                                {{ form.shelf }}
+                                {% if form.shelf.errors %}
+                                    <div class="text-danger small mt-1">{{ form.shelf.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Bin</label>
+                                {{ form.bin }}
+                                {% if form.bin.errors %}
+                                    <div class="text-danger small mt-1">{{ form.bin.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Is Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.is_occupied }}
+                                    <label class="form-check-label" for="{{ form.is_occupied.id_for_label }}">Is Occupied</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Create Location
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
