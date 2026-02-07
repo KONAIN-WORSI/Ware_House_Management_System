@@ -15,8 +15,9 @@ def warehouse_list(request):
     'list all warehouses with search and filters'
 
     warehouses = Warehouse.objects.select_related('manager').annotate(
-        total_zones = Count('storage_zones'),
-        total_locations = Count('storage_locations')
+        total_zones = Count('storage_zones', distinct=True),
+        total_locations = Count('storage_locations', distinct=True),
+        total_products = Count('storage_locations__inventory_items__product', distinct=True)
     )
 
     # search 
@@ -45,6 +46,7 @@ def warehouse_list(request):
     warehouses_list = list(warehouses)
     total_zones_count = sum(w.total_zones for w in warehouses_list)
     total_locations_count = sum(w.total_locations for w in warehouses_list)
+    total_products_count = sum(w.total_products for w in warehouses_list)
 
     context = {
         'warehouses': warehouses_list,
@@ -53,6 +55,7 @@ def warehouse_list(request):
         'active':active,
         'total_zones_count': total_zones_count,
         'total_locations_count': total_locations_count,
+        'total_products_count': total_products_count,
     }
 
     return render(request, 'warehouses/warehouse_list.html', context)
