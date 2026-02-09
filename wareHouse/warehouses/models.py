@@ -4,6 +4,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
+from inventory.models import Inventory
+from django.db.models import Sum, F
 
 # Create your models here.
 User = get_user_model()
@@ -96,7 +98,19 @@ class Warehouse(models.Model):
         return self.storage_locations.count()
 
     def get_occupied_capacity(self):
-        return 0
+        "get total occupied capacity in warehouse"
+        return Inventory.objects.filter(warehouse=self, quantity__gt=0).aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+
+    def get_total_stock_value(self):
+        "get total value of inventory in warehouse"
+        total = Inventory.objects.filter(warehouse=self).annotate(
+            value=F('quantity') * F('product__purchase_price')
+        ).aggregate(
+            total=Sum('value')
+        )['total'] or 0
+        return total
 
     def get_available_capacity(self):
         return self.total_capacity - self.get_occupied_capacity()
@@ -105,8 +119,12 @@ class Warehouse(models.Model):
         if self.total_capacity == 0:
             return 0
         return (self.get_occupied_capacity() / self.total_capacity) * 100
+    
+    def get_total_products(self):
+        "get total number of different products in warehouse"
+        return Inventory.objects.filter(warehouse=self, quantity__gt=0).count()
 
-
+        
 class StorageZone(models.Model):
     "storage zones with in a warehouse(e.g. cold storage, dry storage)"
 

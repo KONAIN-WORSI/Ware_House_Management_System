@@ -1,7 +1,10 @@
+from itertools import product
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
+from inventory.models import Inventory
+from django.db.models import Sum
 
 # Create your models here.
 User = get_user_model()
@@ -153,11 +156,21 @@ class Product(models.Model):
 
     def get_current_stock(self):
         "get current stock quantity accross all warehouses"
-            # we will implement this later when we create inventory model
-        return 0
+        total = Inventory.objects.filter(product=self).aggregate(
+            total= Sum('quantity')
+        )['total']
+        return total or 0
+
+    def get_stock_by_warehouse(self):
+        "get stock breakdown by warehouse"
+        return Inventory.objects.filter(product=self).select_related('warehouse')
 
     def is_low_stock(self):
         "check if stock is below reorder level"
         return self.get_current_stock() <= self.reorder_level
+
+    def is_out_of_stock(self):
+        "check if product is out of stock"
+        return self.get_current_stock() == 0
 
         
