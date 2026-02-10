@@ -8,9 +8,6 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db.models import Sum, F, Q
 from django.utils import timezone
-from products.models import Product
-from wareHouse import inventory
-from warehouses.models import Warehouse, StorageLocation
 
 
 User = get_user_model()
@@ -19,20 +16,26 @@ class Inventory(models.Model):
     "current stock levels for each product in each warehouse This is the master inventory table - real-time stock tracking"
 
     product = models.ForeignKey(
-        Product,
+        'products.Product',
         on_delete=models.CASCADE,
-        related_name='inventory_records'
+        related_name='inventory_records',
+        null=True,
+        blank=True
     )
 
     warehouse = models.ForeignKey(
-        Warehouse,
+        'warehouses.Warehouse',
         on_delete=models.CASCADE,
-        related_name='inventory_records'
+        related_name='inventory_records',
+        null=True,
+        blank=True
     )
     storage_location = models.ForeignKey(
-        StorageLocation,
+        'warehouses.StorageLocation',
         on_delete=models.CASCADE,
-        related_name='inventory_records'
+        related_name='inventory_records',
+        null=True,
+        blank=True
     )
 
     # stock quantities
@@ -148,7 +151,7 @@ class StockMovement(models.Model):
 
     # product & location
     product = models.ForeignKey(
-        Product,
+        'products.Product',
         on_delete=models.CASCADE,
         related_name='stock_movements'
     )
@@ -156,14 +159,14 @@ class StockMovement(models.Model):
 
     # source (for OUT and TRANSFER)
     from_warehouse = models.ForeignKey(
-        Warehouse,
+        'warehouses.Warehouse',
         on_delete=models.PROTECT,
         related_name='outgoing_movements',
         null=True,
         blank=True
     )
     from_location = models.ForeignKey(
-        StorageLocation,
+        'warehouses.StorageLocation',
         on_delete=models.SET_NULL,
         related_name='outgoing_movements',
         null=True,
@@ -172,7 +175,7 @@ class StockMovement(models.Model):
 
     # Destination (for IN and TRANSFER)
     to_warehouse = models.ForeignKey(
-        Warehouse,
+        'warehouses.Warehouse',
         on_delete=models.PROTECT,
         related_name='incoming_movements',
         null=True,
@@ -180,7 +183,7 @@ class StockMovement(models.Model):
     )
 
     to_location = models.ForeignKey(
-        StorageLocation,
+        'warehouses.StorageLocation',
         on_delete=models.SET_NULL,
         related_name='incoming_movements',
         null=True,
@@ -203,7 +206,7 @@ class StockMovement(models.Model):
     )
 
     total_amount = models.DecimalField(
-        max_digit=12,
+        max_digits=12,
         decimal_places=2,
         editable=False,
         help_text='total amount (quantity * unit_price)'
@@ -227,7 +230,7 @@ class StockMovement(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='stock movements'
+        related_name='recorded_stock_movements'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

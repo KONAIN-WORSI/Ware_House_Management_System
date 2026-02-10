@@ -3,7 +3,6 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
-from inventory.models import Inventory
 from django.db.models import Sum
 
 # Create your models here.
@@ -156,6 +155,7 @@ class Product(models.Model):
 
     def get_current_stock(self):
         "get current stock quantity accross all warehouses"
+        from inventory.models import Inventory
         total = Inventory.objects.filter(product=self).aggregate(
             total= Sum('quantity')
         )['total']
@@ -163,7 +163,8 @@ class Product(models.Model):
 
     def get_stock_by_warehouse(self):
         "get stock breakdown by warehouse"
-        return Inventory.objects.filter(product=self).select_related('warehouse')
+        from inventory.models import Inventory
+        return Inventory.objects.filter(product=self).select_related('location__zone__warehouse')
 
     def is_low_stock(self):
         "check if stock is below reorder level"
