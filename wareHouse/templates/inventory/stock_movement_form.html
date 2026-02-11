@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'inventory:stock_movement_list' %}">Stock Movements</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4>
+                    {% if movement_type == 'in' %}
+                    <i class="fas fa-arrow-down text-success"></i>
+                    {% elif movement_type == 'out' %}
+                    <i class="fas fa-arrow-up text-danger"></i>
+                    {% elif movement_type == 'transfer' %}
+                    <i class="fas fa-exchange-alt text-primary"></i>
+                    {% else %}
+                    <i class="fas fa-balance-scale text-warning"></i>
+                    {% endif %}
+                    {{ title }}
+                </h4>
+                <a href="{% url 'inventory:stock_movement_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" id="stockMovementForm">
+                {% csrf_token %}
+                
+                <!-- Product Selection -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-box"></i> Product Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Product *</label>
+                                {{ form.product }}
+                                {% if form.product.errors %}
+                                    <div class="text-danger small mt-1">{{ form.product.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity *</label>
+                                {{ form.quantity }}
+                                {% if form.quantity.errors %}
+                                    <div class="text-danger small mt-1">{{ form.quantity.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Unit Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    {{ form.unit_price }}
+                                </div>
+                                {% if form.unit_price.errors %}
+                                    <div class="text-danger small mt-1">{{ form.unit_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Movement Date *</label>
+                                {{ form.movement_date }}
+                                {% if form.movement_date.errors %}
+                                    <div class="text-danger small mt-1">{{ form.movement_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Source/Destination -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-warehouse"></i> 
+                            {% if movement_type == 'in' %}
+                            Destination
+                            {% elif movement_type == 'out' %}
+                            Source
+                            {% else %}
+                            Source & Destination
+                            {% endif %}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            {% if movement_type == 'out' or movement_type == 'transfer' %}
+                            <div class="col-md-6">
+                                <label class="form-label">From Warehouse *</label>
+                                {{ form.from_warehouse }}
+                                {% if form.from_warehouse.errors %}
+                                    <div class="text-danger small mt-1">{{ form.from_warehouse.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">From Location</label>
+                                {{ form.from_location }}
+                                {% if form.from_location.errors %}
+                                    <div class="text-danger small mt-1">{{ form.from_location.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if movement_type == 'in' or movement_type == 'transfer' or movement_type == 'adjustment' %}
+                            <div class="col-md-6">
+                                <label class="form-label">To Warehouse *</label>
+                                {{ form.to_warehouse }}
+                                {% if form.to_warehouse.errors %}
+                                    <div class="text-danger small mt-1">{{ form.to_warehouse.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">To Location</label>
+                                {{ form.to_location }}
+                                {% if form.to_location.errors %}
+                                    <div class="text-danger small mt-1">{{ form.to_location.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Additional Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            {% if form.transaction_type %}
+                            <div class="col-md-6">
+                                <label class="form-label">Transaction Type</label>
+                                {{ form.transaction_type }}
+                                {% if form.transaction_type.errors %}
+                                    <div class="text-danger small mt-1">{{ form.transaction_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Batch Number</label>
+                                {{ form.batch_number }}
+                                {% if form.batch_number.errors %}
+                                    <div class="text-danger small mt-1">{{ form.batch_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if form.expiry_date %}
+                            <div class="col-md-6">
+                                <label class="form-label">Expiry Date</label>
+                                {{ form.expiry_date }}
+                                {% if form.expiry_date.errors %}
+                                    <div class="text-danger small mt-1">{{ form.expiry_date.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Auto-calculated based on product shelf life</small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if form.party_name %}
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {% if movement_type == 'in' %}
+                                    Supplier Name
+                                    {% else %}
+                                    Customer Name
+                                    {% endif %}
+                                </label>
+                                {{ form.party_name }}
+                                {% if form.party_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.party_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if form.reason %}
+                            <div class="col-12">
+                                <label class="form-label">Reason *</label>
+                                {{ form.reason }}
+                                {% if form.reason.errors %}
+                                    <div class="text-danger small mt-1">{{ form.reason.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="col-12">
+                                <label class="form-label">Notes</label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}
+                                    <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'inventory:stock_movement_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Record Movement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-calculate total amount
+    function calculateTotal() {
+        const quantity = parseFloat(document.querySelector('[name="quantity"]').value) || 0;
+        const unitPrice = parseFloat(document.querySelector('[name="unit_price"]').value) || 0;
+        const total = quantity * unitPrice;
+        
+        // Display total (optional)
+        console.log('Total Amount:', total.toFixed(2));
+    }
+    
+    document.querySelector('[name="quantity"]').addEventListener('input', calculateTotal);
+    document.querySelector('[name="unit_price"]').addEventListener('input', calculateTotal);
+</script>
+{% endblock %}

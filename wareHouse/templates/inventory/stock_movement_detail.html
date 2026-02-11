@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Movement {{ movement.reference_number }} - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'inventory:stock_movement_list' %}">Stock Movements</a></li>
+<li class="breadcrumb-item active">{{ movement.reference_number }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-file-invoice"></i> Movement Details</h2>
+        <p class="text-muted">Reference: <code>{{ movement.reference_number }}</code></p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'inventory:stock_movement_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Details -->
+    <div class="col-lg-8">
+        <div class="data-table mb-4">
+            <h5 class="mb-3 border-bottom pb-2">Movement Information</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Movement Type</label>
+                    <p class="mb-0">
+                        {% if movement.movement_type == 'in' %}
+                        <span class="badge bg-success">Stock In</span>
+                        {% elif movement.movement_type == 'out' %}
+                        <span class="badge bg-danger">Stock Out</span>
+                        {% elif movement.movement_type == 'transfer' %}
+                        <span class="badge bg-primary">Transfer</span>
+                        {% else %}
+                        <span class="badge bg-warning">Adjustment</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Transaction Type</label>
+                    <p class="mb-0 text-capitalize">{{ movement.transaction_type }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Date & Time</label>
+                    <p class="mb-0">{{ movement.movement_date|date:"F d, Y - h:i A" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Recorded By</label>
+                    <p class="mb-0">{{ movement.recorded_by.get_full_name|default:movement.recorded_by.username }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-table mb-4">
+            <h5 class="mb-3 border-bottom pb-2">Product Information</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Product Name</label>
+                    <p class="mb-0"><strong>{{ movement.product.name }}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">SKU</label>
+                    <p class="mb-0"><code>{{ movement.product.sku }}</code></p>
+                </div>
+                <div class="col-md-4">
+                    <label class="text-muted small">Quantity</label>
+                    <p class="mb-0"><strong>{{ movement.quantity }} {{ movement.product.unit }}</strong></p>
+                </div>
+                <div class="col-md-4">
+                    <label class="text-muted small">Unit Price</label>
+                    <p class="mb-0">₹{{ movement.unit_price|floatformat:2 }}</p>
+                </div>
+                <div class="col-md-4">
+                    <label class="text-muted small">Total Amount</label>
+                    <p class="mb-0"><strong>₹{{ movement.total_amount|floatformat:2 }}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Batch Number</label>
+                    <p class="mb-0">{{ movement.batch_number|default:"-" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Expiry Date</label>
+                    <p class="mb-0">{{ movement.expiry_date|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if movement.notes %}
+        <div class="data-table">
+            <h5 class="mb-3 border-bottom pb-2">Notes / Remarks</h5>
+            <p class="mb-0">{{ movement.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Side Details (Locations) -->
+    <div class="col-lg-4">
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">Location Details</h6>
+            </div>
+            <div class="card-body">
+                {% if movement.movement_type == 'out' or movement.movement_type == 'transfer' %}
+                <div class="mb-4">
+                    <h6 class="text-danger small fw-bold">SOURCE</h6>
+                    <p class="mb-1"><strong>{{ movement.from_warehouse.name }}</strong></p>
+                    <p class="mb-0 text-muted small">
+                        Location: {{ movement.from_location.code|default:"General Area" }}
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if movement.movement_type == 'in' or movement.movement_type == 'transfer' or movement.movement_type == 'adjustment' %}
+                <div class="mb-0">
+                    <h6 class="text-success small fw-bold">DESTINATION</h6>
+                    <p class="mb-1"><strong>{{ movement.to_warehouse.name|default:movement.warehouse.name }}</strong></p>
+                    <p class="mb-0 text-muted small">
+                        Location: {{ movement.to_location.code|default:"General Area" }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if movement.party_name %}
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">External Party</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ movement.party_name }}</strong></p>
+                <p class="mb-0 text-muted small">
+                    {% if movement.movement_type == 'in' %}
+                    Supplier
+                    {% else %}
+                    Customer
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

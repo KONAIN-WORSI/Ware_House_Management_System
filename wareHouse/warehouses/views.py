@@ -1,4 +1,3 @@
-from itertools import count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -17,7 +16,7 @@ def warehouse_list(request):
     warehouses = Warehouse.objects.select_related('manager').annotate(
         total_zones = Count('storage_zones', distinct=True),
         total_locations = Count('storage_locations', distinct=True),
-        total_products = Count('storage_locations__inventory_items__product', distinct=True)
+        total_products = Count('inventory_records__product', distinct=True)
     )
 
     # search 
@@ -50,9 +49,9 @@ def warehouse_list(request):
 
     context = {
         'warehouses': warehouses_list,
-        'search_query':search_query,
-        'status':status,
-        'active':active,
+        'search_query': search_query,
+        'selected_status': status,
+        'selected_active': active,
         'total_zones_count': total_zones_count,
         'total_locations_count': total_locations_count,
         'total_products_count': total_products_count,

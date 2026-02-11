@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ inventory.product.name }} - Inventory - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'inventory:inventory_list' %}">Inventory</a></li>
+<li class="breadcrumb-item active">{{ inventory.product.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-box"></i> {{ inventory.product.name }}</h2>
+        <p class="text-muted">{{ inventory.warehouse.name }} - SKU: <code>{{ inventory.product.sku }}</code></p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'inventory:stock_in' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Stock
+        </a>
+        <a href="{% url 'inventory:stock_out' %}" class="btn btn-danger">
+            <i class="fas fa-minus"></i> Remove Stock
+        </a>
+        <a href="{% url 'inventory:inventory_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h5 class="mb-1">Total Quantity</h5>
+            <h3 class="mb-0">{{ inventory.quantity }} {{ inventory.product.unit }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <h5 class="mb-1">Reserved</h5>
+            <h3 class="mb-0">{{ inventory.reserved_quantity }} {{ inventory.product.unit }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h5 class="mb-1">Available</h5>
+            <h3 class="mb-0">{{ inventory.available_quantity }} {{ inventory.product.unit }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <h5 class="mb-1">Total Value</h5>
+            <h3 class="mb-0">₹{{ inventory.get_total_value|floatformat:2 }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Inventory Details -->
+    <div class="col-lg-6">
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-info-circle"></i> Inventory Details</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Product</label>
+                    <p class="mb-0"><strong>{{ inventory.product.name }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">SKU</label>
+                    <p class="mb-0"><code>{{ inventory.product.sku }}</code></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Warehouse</label>
+                    <p class="mb-0">{{ inventory.warehouse.name }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Storage Location</label>
+                    <p class="mb-0">
+                        {% if inventory.storage_location %}
+                        <span class="badge bg-secondary">{{ inventory.storage_location.code }}</span>
+                        {% else %}
+                        <span class="text-muted">Not assigned</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Batch Number</label>
+                    <p class="mb-0">{{ inventory.batch_number|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Manufacturing Date</label>
+                    <p class="mb-0">{{ inventory.manufacturing_date|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Expiry Date</label>
+                    <p class="mb-0">
+                        {% if inventory.expiry_date %}
+                        {{ inventory.expiry_date }}
+                        {% if inventory.is_expired %}
+                        <span class="badge bg-danger ms-2">EXPIRED</span>
+                        {% elif inventory.is_expiring_soon %}
+                        <span class="badge bg-warning ms-2">{{ inventory.days_until_expiry }} days left</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Last Restocked</label>
+                    <p class="mb-0">{{ inventory.last_restocked|date:"M d, Y - h:i A" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pricing Information -->
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-rupee-sign"></i> Value Calculation</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Purchase Price</label>
+                    <p class="mb-0">₹{{ inventory.product.purchase_price }} / {{ inventory.product.unit }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Selling Price</label>
+                    <p class="mb-0">₹{{ inventory.product.selling_price }} / {{ inventory.product.unit }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Stock Value (Purchase)</label>
+                    <p class="mb-0"><strong>₹{{ inventory.get_total_value|floatformat:2 }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Potential Revenue</label>
+                    <p class="mb-0"><strong>₹{{ inventory.get_potential_revenue|floatformat:2 }}</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stock Movements History -->
+    <div class="col-lg-6">
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-history"></i> Recent Stock Movements</h5>
+            
+            <div class="list-group list-group-flush">
+                {% for movement in movements %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>{{ movement.reference_number }}</strong>
+                            {% if movement.movement_type == 'in' %}
+                            <span class="badge bg-success ms-2">Stock In</span>
+                            {% elif movement.movement_type == 'out' %}
+                            <span class="badge bg-danger ms-2">Stock Out</span>
+                            {% elif movement.movement_type == 'transfer' %}
+                            <span class="badge bg-primary ms-2">Transfer</span>
+                            {% else %}
+                            <span class="badge bg-warning ms-2">Adjustment</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ movement.movement_date|date:"M d, h:i A" }}</small>
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <small class="text-muted">Quantity:</small>
+                            <strong>{{ movement.quantity }} {{ movement.product.unit }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Amount:</small>
+                            <strong>₹{{ movement.total_amount }}</strong>
+                        </div>
+                        {% if movement.movement_type == 'transfer' %}
+                        <div class="col-12">
+                            <small class="text-muted">
+                                {{ movement.from_warehouse.name }} → {{ movement.to_warehouse.name }}
+                            </small>
+                        </div>
+                        {% elif movement.party_name %}
+                        <div class="col-12">
+                            <small class="text-muted">Party: {{ movement.party_name }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No movements recorded yet</p>
+                {% endfor %}
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{% url 'inventory:stock_movement_list' %}" class="btn btn-sm btn-outline-primary">
+                    View All Movements
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

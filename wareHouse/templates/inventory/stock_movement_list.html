@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Movements - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item active">Stock Movements</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="fas fa-history"></i> Stock Movements</h2>
+        <p class="text-muted">Audit trail of all inventory changes</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group">
+            <a href="{% url 'inventory:stock_in' %}" class="btn btn-success">
+                <i class="fas fa-arrow-down"></i> Stock In
+            </a>
+            <a href="{% url 'inventory:stock_out' %}" class="btn btn-danger">
+                <i class="fas fa-arrow-up"></i> Stock Out
+            </a>
+            <a href="{% url 'inventory:stock_transfer' %}" class="btn btn-primary">
+                <i class="fas fa-exchange-alt"></i> Transfer
+            </a>
+            <a href="{% url 'inventory:stock_adjustment' %}" class="btn btn-warning">
+                <i class="fas fa-balance-scale"></i> Adjust
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control" placeholder="Reference, Product, Party..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                <option value="in" {% if selected_type == 'in' %}selected{% endif %}>Stock In</option>
+                <option value="out" {% if selected_type == 'out' %}selected{% endif %}>Stock Out</option>
+                <option value="transfer" {% if selected_type == 'transfer' %}selected{% endif %}>Transfer</option>
+                <option value="adjustment" {% if selected_type == 'adjustment' %}selected{% endif %}>Adjustment</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="warehouse" class="form-select">
+                <option value="">All Warehouses</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.id }}" {% if selected_warehouse == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                    {{ warehouse.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}" title="Date From">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}" title="Date To">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-secondary w-100">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Movements Table -->
+<div class="data-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Warehouse(s)</th>
+                    <th>Quantity</th>
+                    <th>Total Amount</th>
+                    <th>Party</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movement in movements %}
+                <tr>
+                    <td>
+                        <strong>{{ movement.reference_number }}</strong>
+                    </td>
+                    <td>
+                        <small>{{ movement.movement_date|date:"Y-m-d" }}</small><br>
+                        <small class="text-muted">{{ movement.movement_date|date:"H:i" }}</small>
+                    </td>
+                    <td>
+                        {{ movement.product.name }}<br>
+                        <small class="text-muted">SKU: {{ movement.product.sku }}</small>
+                    </td>
+                    <td>
+                        {% if movement.movement_type == 'in' %}
+                        <span class="badge bg-success">Stock In</span>
+                        {% elif movement.movement_type == 'out' %}
+                        <span class="badge bg-danger">Stock Out</span>
+                        {% elif movement.movement_type == 'transfer' %}
+                        <span class="badge bg-primary">Transfer</span>
+                        {% else %}
+                        <span class="badge bg-warning">Adjustment</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if movement.movement_type == 'in' %}
+                        <span class="text-muted">To:</span> {{ movement.to_warehouse.code }}
+                        {% elif movement.movement_type == 'out' %}
+                        <span class="text-muted">From:</span> {{ movement.from_warehouse.code }}
+                        {% elif movement.movement_type == 'transfer' %}
+                        {{ movement.from_warehouse.code }} <i class="fas fa-long-arrow-alt-right"></i> {{ movement.to_warehouse.code }}
+                        {% else %}
+                        {{ movement.to_warehouse.code }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ movement.quantity }} {{ movement.product.unit }}</strong>
+                    </td>
+                    <td>₹{{ movement.total_amount|floatformat:2 }}</td>
+                    <td>{{ movement.party_name|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'inventory:stock_movement_detail' movement.pk %}" class="btn btn-sm btn-info" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No stock movements found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if movements.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-end">
+            {% if movements.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ movements.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_warehouse %}&warehouse={{ selected_warehouse }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ movements.number }}</span>
+            </li>
+            
+            {% if movements.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ movements.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_warehouse %}&warehouse={{ selected_warehouse }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

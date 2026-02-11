@@ -1,8 +1,3 @@
-from itertools import product
-from random import choices
-from tabnanny import verbose
-from tokenize import blank_re
-from django.core import validators
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
@@ -127,14 +122,14 @@ class StockMovement(models.Model):
     "Track all stock movements (IN/OUT/TRANSFER) complete audit trail of inventory changes"
 
     MOVEMENT_TYPE_CHOICES = [
-        ('IN', 'Stock In'),
-        ('OUT', 'Stock Out'),
-        ('TRANSFER', 'Transfer'),
-        ('ADJUSTMENT', 'Adjustment'),
+        ('in', 'Stock In'),
+        ('out', 'Stock Out'),
+        ('transfer', 'Transfer'),
+        ('adjustment', 'Adjustment'),
     ]
 
     TRANSACTION_TYPE_CHOICES = [
-        ('purchase', 'purchase from Supplier'),
+        ('purchase', 'Purchase from Supplier'),
         ('sale', 'Sale to Customer'),
         ('return', 'Customer Return'),
         ('damage', 'Damage/Spoiled'),
@@ -295,8 +290,8 @@ class StockMovement(models.Model):
         elif self.movement_type == 'transfer':
             # transfer - adjust both source and destination
             self.stock_transfer()
-        elif self.movement_type == 'adjust':
-            # adjust - manual change in inventory
+        elif self.movement_type == 'adjustment':
+            # adjustment - manual change in inventory
             self.stock_adjustment()
 
     def stock_in(self):
@@ -327,7 +322,7 @@ class StockMovement(models.Model):
 
         # update location status
         if self.to_location:
-            self.to_location.is_occupies = True
+            self.to_location.is_occupied = True
             self.to_location.save()
 
 
@@ -361,7 +356,7 @@ class StockMovement(models.Model):
         # if quantity is 0, mark location as available
         if inventory.quantity == 0:
             if inventory.storage_location:
-                inventory.storage_location.is_occupies = False
+                inventory.storage_location.is_occupied = False
                 inventory.storage_location.save()
 
     
@@ -407,7 +402,7 @@ class StockAlert(models.Model):
         ('expired', 'Expired'),
     ]
 
-    STATU_CHOICES = [
+    STATUS_CHOICES = [
         ('active', 'Active'),
         ('acknowledged', 'Acknowledged'),
         ('resolved', 'Resolved'),
@@ -426,12 +421,19 @@ class StockAlert(models.Model):
     
     status = models.CharField(
         max_length=20,
-        choices=STATU_CHOICES,
+        choices=STATUS_CHOICES,
         default='active',
     )
 
     message = models.TextField()
 
+    acknowledged_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='acknowledged_alerts'
+    )
     acknowledged_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -445,10 +447,10 @@ class StockAlert(models.Model):
     def __str__(self):
         return f"{self.alert_type} - {self.inventory.product.name}"
 
-    def acknowledge(self):
+    def acknowledge(self, user):
         # mark alert as acknowledged
         self.status = 'acknowledged'
-        self.acknowledge_by = user
+        self.acknowledged_by = user
         self.acknowledged_at = timezone.now()
         self.save()
 

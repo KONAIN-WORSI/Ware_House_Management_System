@@ -64,4 +64,117 @@ class InventoryAdmin(admin.ModelAdmin):
 
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
-    list_display = []
+    list_display = [
+        'reference_number',
+        'movement_type_badge',
+        'transaction_type',
+        'product',
+        'quantity_display',
+        'from_warehouse',
+        'to_warehouse',
+        'movement_date',
+        'recorded_by',
+    ]
+
+    list_filter = ['movement_type', 'transaction_type','movement_date','from_warehouse','to_warehouse']
+    search_fields = ['reference_number','product__name','party_name']
+    date_hierarchy = 'movement_date'
+
+    readonly_fields = ['reference_number', 'total_amount', 'created_at']
+
+    fieldsets = (
+        ('Movement Information', {
+            'fields':('reference_number','movement_type','transaction_type','movement_date')
+        }),
+        ('Product Details', {
+            'fields':('product','quantity','unit_price','total_amount','batch_number','expiry_date')
+        }),
+        ('Source (From)', {
+            'fields':('from_warehouse', 'from_location')
+        }),
+        ('Destination (To)', {
+            'fields':('to_warehouse', 'to_location')
+        }),
+        ('Additional Information', {
+            'fields':('party_name','notes','reason')
+        }),
+        ('Metadata', {
+            'fields': ('recorded_by', 'created_at'),
+            'classes':('collapse',)
+        }),
+        
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not obj.recorded_by:
+            obj.recorded_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def movement_type_badge(self, obj):
+        colors = {
+            'in':'green',
+            'out':'red',
+            'transfer':'blue',
+            'adjustment':'orange'
+        }
+
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 5px;">{}</span>',
+            colors.get(obj.movement_type, 'gray'),
+            obj.get_movement_type_display()
+        )
+    movement_type_badge.short_description = 'Movement Type'
+
+    def quantity_display(self, obj):
+        return f"{obj.quantity} {obj.product.unit}"
+    quantity_display.short_description = 'Quantity'
+
+
+
+@admin.register(StockAlert)
+class StockAlertAdmin(admin.ModelAdmin):
+    list_display = [
+        'alert_type_badge',
+        'inventory',
+        'message',
+        'status_badge',
+        'acknowledged_by',
+        'created_at'
+    ]
+
+    list_filter = ['alert_type', 'status', 'created_at']
+    search_fields = ['inventory__product__name', 'message']
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    def alert_type_badge(self, obj):
+        colors = {
+            'low_stock':'orange',
+            'out_of_stock':'red',
+            'expiring_soon':'yellow',
+            'expired':'darkred'
+        }
+
+        return format_html(
+            '<span style="background: {}; color: white; padding: 5px 10px; border-radius: 5px;">{}</span>',
+            colors.get(obj.alert_type, 'gray'),
+            obj.get_alert_type_display()
+        )
+    alert_type_badge.short_description = 'Alert Type'
+
+    def status_badge(self, obj):
+        colors = {
+            'active':'green',
+            'acknowledged':'blue',
+            'resolved':'orange'
+        }
+        return format_html(
+            '<span style="background: {}; color: white; padding: 5px 10px; border-radius: 5px;">{}</span>',
+            colors.get(obj.status, 'gray'),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Status'
+    
+    
+
+    

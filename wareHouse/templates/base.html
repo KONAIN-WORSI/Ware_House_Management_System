@@ -40,6 +40,30 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                            href="{% url 'inventory:dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'inventory_list' %}active{% endif %}"
+                            href="{% url 'inventory:inventory_list' %}">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'stock_movement_list' %}active{% endif %}"
+                            href="{% url 'inventory:stock_movement_list' %}">
+                            <i class="fas fa-exchange-alt"></i> Movements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'alerts' %}active{% endif %}"
+                            href="{% url 'inventory:alerts' %}">
+                            <i class="fas fa-exclamation-triangle"></i> Alerts
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <form action="{% url 'logout' %}" method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-link nav-link">Logout</button>

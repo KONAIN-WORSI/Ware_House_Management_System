@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Dashboard - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item active">Inventory Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="fas fa-chart-pie"></i> Inventory Overview</h2>
+        <p class="text-muted">Real-time inventory statistics and alerts</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'inventory:inventory_list' %}" class="btn btn-primary">
+            <i class="fas fa-list"></i> Full Inventory List
+        </a>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+            <h5 class="mb-1">Total Stock Value</h5>
+            <h3 class="mb-0">₹{{ total_value|floatformat:2 }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <div class="icon"><i class="fas fa-boxes"></i></div>
+            <h5 class="mb-1">Active Products</h5>
+            <h3 class="mb-0">{{ total_products }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h5 class="mb-1">Low Stock Alerts</h5>
+            <h3 class="mb-0">{{ low_stock_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <div class="icon"><i class="fas fa-clock"></i></div>
+            <h5 class="mb-1">Expiring Soon</h5>
+            <h3 class="mb-0">{{ expiring_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Stock by Warehouse -->
+    <div class="col-lg-8">
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-warehouse"></i> Stock by Warehouse</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Warehouse</th>
+                            <th>Total Products</th>
+                            <th>Total Value</th>
+                            <th>Capacity Used</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for warehouse in warehouse_stock %}
+                        <tr>
+                            <td>
+                                <strong>{{ warehouse.name }}</strong><br>
+                                <small class="text-muted">{{ warehouse.code }}</small>
+                            </td>
+                            <td>{{ warehouse.total_items }}</td>
+                            <td>₹{{ warehouse.total_value|floatformat:2|default:"0.00" }}</td>
+                            <td>
+                                <div class="progress" style="height: 10px; width: 100px;">
+                                    {% with pc=warehouse.capacity_percentage %}
+                                    <div class="progress-bar {% if pc > 90 %}bg-danger{% elif pc > 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" style="width: {{ pc|floatformat:1 }}%"></div>
+                                    {% endwith %}
+                                </div>
+                                <small class="text-muted">{{ warehouse.capacity_percentage|floatformat:1 }}%</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'warehouses:warehouse_detail' warehouse.pk %}" class="btn btn-sm btn-outline-primary">
+                                    Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-history"></i> Recent Movements</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Reference</th>
+                            <th>Product</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movement in recent_movements %}
+                        <tr>
+                            <td><small>{{ movement.movement_date|date:"M d, H:i" }}</small></td>
+                            <td><small><code>{{ movement.reference_number }}</code></small></td>
+                            <td>{{ movement.product.name }}</td>
+                            <td>
+                                {% if movement.movement_type == 'in' %}
+                                <span class="badge bg-success small">In</span>
+                                {% elif movement.movement_type == 'out' %}
+                                <span class="badge bg-danger small">Out</span>
+                                {% elif movement.movement_type == 'transfer' %}
+                                <span class="badge bg-primary small">Trf</span>
+                                {% else %}
+                                <span class="badge bg-warning small">Adj</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ movement.quantity }} {{ movement.product.unit }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-2">
+                <a href="{% url 'inventory:stock_movement_list' %}" class="btn btn-sm btn-link">View All Movements</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar: Low Stock & Expiring -->
+    <div class="col-lg-4">
+        <div class="data-table mb-4">
+            <h5 class="mb-3 text-warning"><i class="fas fa-exclamation-triangle"></i> Low Stock Items</h5>
+            <div class="list-group list-group-flush">
+                {% for item in low_stock_items %}
+                <div class="list-group-item px-0 border-0 mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ item.product.name }}</h6>
+                            <small class="text-muted">{{ item.warehouse.code }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning text-dark">{{ item.quantity }} {{ item.product.unit }}</span><br>
+                            <small class="text-muted">Min: {{ item.product.reorder_level }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted small">No low stock items</p>
+                {% endfor %}
+            </div>
+            {% if low_stock_count > 5 %}
+            <div class="text-center mt-2 border-top pt-2">
+                <a href="{% url 'inventory:inventory_list' %}?status=low" class="btn btn-sm btn-link">View All Low Stock</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="data-table">
+            <h5 class="mb-3 text-info"><i class="fas fa-hourglass-half"></i> Expiring Soon</h5>
+            <div class="list-group list-group-flush">
+                {% for item in expiring_soon %}
+                <div class="list-group-item px-0 border-0 mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ item.product.name }}</h6>
+                            <small class="text-muted">Batch: {{ item.batch_number|default:"-" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-info text-white">{{ item.days_until_expiry }} days</span><br>
+                            <small class="text-muted">{{ item.expiry_date|date:"Y-m-d" }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted small">No items expiring soon</p>
+                {% endfor %}
+            </div>
+            {% if expiring_count > 5 %}
+            <div class="text-center mt-2 border-top pt-2">
+                <a href="{% url 'inventory:inventory_list' %}?status=expiring" class="btn btn-sm btn-link">View All Expiring</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

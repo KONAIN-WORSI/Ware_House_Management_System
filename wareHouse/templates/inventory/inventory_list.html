@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item active">Inventory</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="fas fa-boxes"></i> Inventory Management</h2>
+        <p class="text-muted">Real-time stock tracking across all warehouses</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group">
+            <a href="{% url 'inventory:stock_in' %}" class="btn btn-success">
+                <i class="fas fa-arrow-down"></i> Stock In
+            </a>
+            <a href="{% url 'inventory:stock_out' %}" class="btn btn-danger">
+                <i class="fas fa-arrow-up"></i> Stock Out
+            </a>
+            <a href="{% url 'inventory:stock_transfer' %}" class="btn btn-primary">
+                <i class="fas fa-exchange-alt"></i> Transfer
+            </a>
+            <a href="{% url 'inventory:stock_adjustment' %}" class="btn btn-warning">
+                <i class="fas fa-balance-scale"></i> Adjust
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <div class="icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <h5 class="mb-1">Total Stock Value</h5>
+            <h3 class="mb-0">₹{{ total_value|floatformat:2 }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <div class="icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <h5 class="mb-1">Total Products</h5>
+            <h3 class="mb-0">{{ total_items }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <div class="icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h5 class="mb-1">Low Stock Items</h5>
+            <h3 class="mb-0">{{ low_stock_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <div class="icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h5 class="mb-1">Expiring Soon</h5>
+            <h3 class="mb-0">{{ expiring_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <input type="text" 
+                   name="search" 
+                   class="form-control" 
+                   placeholder="Search by product, SKU, or batch..." 
+                   value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <select name="warehouse" class="form-select">
+                <option value="">All Warehouses</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.id }}" {% if warehouse_id == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                    {{ warehouse.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="low" {% if stock_status == 'low' %}selected{% endif %}>Low Stock</option>
+                <option value="expiring" {% if stock_status == 'expiring' %}selected{% endif %}>Expiring Soon</option>
+                <option value="expired" {% if stock_status == 'expired' %}selected{% endif %}>Expired</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Inventory Table -->
+<div class="data-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Warehouse</th>
+                    <th>Location</th>
+                    <th>Batch</th>
+                    <th>Quantity</th>
+                    <th>Reserved</th>
+                    <th>Available</th>
+                    <th>Value</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inventory in inventory_page %}
+                <tr>
+                    <td>
+                        <strong>{{ inventory.product.name }}</strong><br>
+                        <small class="text-muted">{{ inventory.product.category.name|default:"-" }}</small>
+                    </td>
+                    <td><code>{{ inventory.product.sku }}</code></td>
+                    <td>{{ inventory.warehouse.name }}</td>
+                    <td>
+                        {% if inventory.storage_location %}
+                        <span class="badge bg-secondary">{{ inventory.storage_location.code }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inventory.batch_number %}
+                        <small>{{ inventory.batch_number }}</small>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ inventory.quantity }} {{ inventory.product.unit }}</strong>
+                    </td>
+                    <td>
+                        {% if inventory.reserved_quantity > 0 %}
+                        {{ inventory.reserved_quantity }} {{ inventory.product.unit }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="{% if inventory.available_quantity > 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ inventory.available_quantity }} {{ inventory.product.unit }}
+                        </span>
+                    </td>
+                    <td>₹{{ inventory.get_total_value|floatformat:2 }}</td>
+                    <td>
+                        {% if inventory.is_expired %}
+                        <span class="badge bg-danger">EXPIRED</span>
+                        {% elif inventory.is_expiring_soon %}
+                        <span class="badge bg-warning">{{ inventory.days_until_expiry }} days</span>
+                        {% elif inventory.expiry_date %}
+                        <small>{{ inventory.expiry_date }}</small>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inventory.quantity == 0 %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                        {% elif inventory.is_low_stock %}
+                        <span class="badge bg-warning">Low Stock</span>
+                        {% else %}
+                        <span class="badge bg-success">In Stock</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'inventory:inventory_detail' inventory.pk %}" 
+                           class="btn btn-sm btn-info" 
+                           title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No inventory records found</p>
+                        <a href="{% url 'inventory:stock_in' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if inventory_page.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-end">
+            {% if inventory_page.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ inventory_page.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_id %}&warehouse={{ warehouse_id }}{% endif %}{% if stock_status %}&status={{ stock_status }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ inventory_page.number }}</span>
+            </li>
+            
+            {% if inventory_page.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ inventory_page.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_id %}&warehouse={{ warehouse_id }}{% endif %}{% if stock_status %}&status={{ stock_status }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% endblock %}
