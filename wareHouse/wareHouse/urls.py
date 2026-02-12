@@ -29,7 +29,8 @@ urlpatterns = [
     path('warehouses/', include('warehouses.urls')),
     # inventory urls
     path('inventory/', include('inventory.urls')),
-
+    # dashboard urls
+    path('', include('dashboards.urls')),
 ]
 
 # media files

@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+        <p class="text-muted">Welcome back, {{ user.get_full_name }}! Here's what's happening today.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'inventory:stock_in' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Quick Stock In
+            </a>
+            <a href="{% url 'inventory:stock_out' %}" class="btn btn-danger btn-sm">
+                <i class="fas fa-minus"></i> Quick Stock Out
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Total Inventory Value</h6>
+                    <h3 class="mb-0">₹{{ total_inventory_value|floatformat:0 }}</h3>
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up"></i> Potential: ₹{{ potential_revenue|floatformat:0 }}
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Products in Stock</h6>
+                    <h3 class="mb-0">{{ total_products_in_stock }}</h3>
+                    <small class="text-danger">
+                        <i class="fas fa-exclamation-circle"></i> {{ out_of_stock_count }} out of stock
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-boxes"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Low Stock Alerts</h6>
+                    <h3 class="mb-0">{{ low_stock_count }}</h3>
+                    <small class="text-warning">
+                        <i class="fas fa-clock"></i> {{ expiring_soon_count }} expiring soon
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Active Warehouses</h6>
+                    <h3 class="mb-0">{{ total_warehouses }}</h3>
+                    <small class="text-info">
+                        <i class="fas fa-warehouse"></i> All operational
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Activity -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="data-table text-center">
+            <h6 class="text-muted mb-2">Today's Stock In</h6>
+            <h2 class="text-success mb-0">{{ stock_in_today|floatformat:0 }}</h2>
+            <small class="text-muted">units received</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="data-table text-center">
+            <h6 class="text-muted mb-2">Today's Stock Out</h6>
+            <h2 class="text-danger mb-0">{{ stock_out_today|floatformat:0 }}</h2>
+            <small class="text-muted">units dispatched</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="data-table text-center">
+            <h6 class="text-muted mb-2">Potential Profit</h6>
+            <h2 class="text-primary mb-0">₹{{ potential_profit|floatformat:0 }}</h2>
+            <small class="text-muted">if all sold</small>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Stock Movement Trend -->
+    <div class="col-lg-8">
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-chart-line"></i> Stock Movement Trend (Last 7 Days)</h5>
+            <canvas id="stockTrendChart" height="80"></canvas>
+        </div>
+    </div>
+    
+    <!-- Category Breakdown -->
+    <div class="col-lg-4">
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-pie-chart"></i> Inventory by Category</h5>
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Warehouse Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-warehouse"></i> Warehouse Overview</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Warehouse</th>
+                            <th>Products</th>
+                            <th>Total Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in warehouse_stats %}
+                        <tr>
+                            <td>
+                                <strong>{{ stat.warehouse.name }}</strong><br>
+                                <small class="text-muted">{{ stat.warehouse.city }}</small>
+                            </td>
+                            <td>{{ stat.inventory_count }}</td>
+                            <td>₹{{ stat.total_value|floatformat:0 }}</td>
+                            <td>
+                                {% if stat.warehouse.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ stat.warehouse.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No warehouses available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Products by Value -->
+    <div class="col-lg-6">
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-star"></i> Top Products by Value</h5>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Warehouse</th>
+                            <th>Quantity</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inventory in top_products %}
+                        <tr>
+                            <td>
+                                <strong>{{ inventory.product.name }}</strong><br>
+                                <small class="text-muted">{{ inventory.product.sku }}</small>
+                            </td>
+                            <td>{{ inventory.warehouse.code }}</td>
+                            <td>{{ inventory.quantity }} {{ inventory.product.unit }}</td>
+                            <td><strong>₹{{ inventory.total_value|floatformat:0 }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No products in stock</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Section -->
+<div class="row g-4 mb-4">
+    <!-- Low Stock Alerts -->
+    <div class="col-lg-4">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Low Stock</h5>
+                <a href="{% url 'inventory:inventory_list' %}?status=low" class="btn btn-sm btn-outline-warning">View All</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for inventory in low_stock_items %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ inventory.product.name }}</strong><br>
+                            <small class="text-muted">{{ inventory.warehouse.name }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning">{{ inventory.quantity }} {{ inventory.product.unit }}</span><br>
+                            <small class="text-muted">Min: {{ inventory.product.reorder_level }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No low stock items</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Expiring Soon -->
+    <div class="col-lg-4">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-clock text-info"></i> Expiring Soon</h5>
+                <a href="{% url 'inventory:inventory_list' %}?status=expiring" class="btn btn-sm btn-outline-info">View All</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for inventory in expiring_soon %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ inventory.product.name }}</strong><br>
+                            <small class="text-muted">{{ inventory.warehouse.name }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning">{{ inventory.days_until_expiry }} days</span><br>
+                            <small class="text-muted">{{ inventory.expiry_date }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No items expiring soon</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Movements -->
+    <div class="col-lg-4">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-history text-primary"></i> Recent Activity</h5>
+                <a href="{% url 'inventory:stock_movement_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for movement in recent_movements %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div>
+                            {% if movement.movement_type == 'in' %}
+                            <i class="fas fa-arrow-down text-success"></i>
+                            {% elif movement.movement_type == 'out' %}
+                            <i class="fas fa-arrow-up text-danger"></i>
+                            {% elif movement.movement_type == 'transfer' %}
+                            <i class="fas fa-exchange-alt text-primary"></i>
+                            {% else %}
+                            <i class="fas fa-balance-scale text-warning"></i>
+                            {% endif %}
+                            <strong>{{ movement.product.name }}</strong>
+                        </div>
+                        <small class="text-muted">{{ movement.movement_date|timesince }} ago</small>
+                    </div>
+                    <small class="text-muted">
+                        {{ movement.quantity }} {{ movement.product.unit }}
+                        {% if movement.movement_type == 'transfer' %}
+                        ({{ movement.from_warehouse.code }} → {{ movement.to_warehouse.code }})
+                        {% elif movement.movement_type == 'in' %}
+                        to {{ movement.to_warehouse.code }}
+                        {% else %}
+                        from {{ movement.from_warehouse.code }}
+                        {% endif %}
+                    </small>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No recent activity</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <a href="{% url 'inventory:stock_in' %}" class="btn btn-success w-100">
+                        <i class="fas fa-arrow-down"></i><br>
+                        <span>Record Stock In</span>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'inventory:stock_out' %}" class="btn btn-danger w-100">
+                        <i class="fas fa-arrow-up"></i><br>
+                        <span>Record Stock Out</span>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'products:product_create' %}" class="btn btn-primary w-100">
+                        <i class="fas fa-plus"></i><br>
+                        <span>Add New Product</span>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'inventory:inventory_list' %}" class="btn btn-info w-100">
+                        <i class="fas fa-boxes"></i><br>
+                        <span>View Inventory</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Stock Trend Chart
+    const trendCtx = document.getElementById('stockTrendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: JSON.parse('{{ chart_labels|safe }}'),
+            datasets: [{
+                label: 'Stock In',
+                data: JSON.parse('{{ stock_in_trend|safe }}'),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Stock Out',
+                data: JSON.parse('{{ stock_out_trend|safe }}'),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Category Pie Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                {% for stat in category_stats %}
+                '{{ stat.category.name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for stat in category_stats %}
+                    {{ stat.value }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
