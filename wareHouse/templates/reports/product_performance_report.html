@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Product Performance - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:reports_dashboard' %}">Reports</a></li>
+<li class="breadcrumb-item active">Product Performance</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-box"></i> Product Performance Report</h2>
+        <p class="text-muted">Analyze product turnover and performance</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">From Date</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">To Date</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-search"></i> View
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Performance Table -->
+<div class="data-table">
+    <h5 class="mb-3">Top 50 Products by Turnover ({{ date_from }} to {{ date_to }})</h5>
+    <div class="table-responsive">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Product</th>
+                    <th>Current Stock</th>
+                    <th>Stock In</th>
+                    <th>Stock Out</th>
+                    <th>Turnover Rate</th>
+                    <th>Revenue</th>
+                    <th>Performance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in product_stats %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{{ stat.product.name }}</strong><br>
+                        <small class="text-muted">{{ stat.product.sku }}</small>
+                    </td>
+                    <td>{{ stat.current_stock|floatformat:0 }} {{ stat.product.unit }}</td>
+                    <td>{{ stat.stock_in_qty|floatformat:0 }}</td>
+                    <td>{{ stat.stock_out_qty|floatformat:0 }}</td>
+                    <td>
+                        <strong>{{ stat.turnover_rate|floatformat:1 }}%</strong>
+                    </td>
+                    <td>₹{{ stat.stock_out_value|floatformat:0 }}</td>
+                    <td>
+                        {% if stat.turnover_rate >= 80 %}
+                        <span class="badge bg-success">Excellent</span>
+                        {% elif stat.turnover_rate >= 50 %}
+                        <span class="badge bg-info">Good</span>
+                        {% elif stat.turnover_rate >= 20 %}
+                        <span class="badge bg-warning">Fair</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Slow</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No product performance data available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

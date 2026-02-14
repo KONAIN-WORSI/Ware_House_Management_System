@@ -29,6 +29,8 @@ urlpatterns = [
     path('warehouses/', include('warehouses.urls')),
     # inventory urls
     path('inventory/', include('inventory.urls')),
+    # reports urls
+    path('reports/', include('reports.urls')),
     # dashboard urls
     path('', include('dashboards.urls')),
 ]

@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Report - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:reports_dashboard' %}">Reports</a></li>
+<li class="breadcrumb-item active">Inventory Report</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="fas fa-boxes"></i> Current Inventory Report</h2>
+        <p class="text-muted">Complete overview of stock across all warehouses</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'reports:inventory_export' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+            <i class="fas fa-file-csv"></i> Export to CSV
+        </a>
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card primary">
+            <h6 class="text-muted mb-2">Total Products</h6>
+            <h3 class="mb-0">{{ total_items }}</h3>
+            <small>Different items in stock</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card success">
+            <h6 class="text-muted mb-2">Total Quantity</h6>
+            <h3 class="mb-0">{{ total_quantity|floatformat:2 }}</h3>
+            <small>Combined units</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card info">
+            <h6 class="text-muted mb-2">Total Value</h6>
+            <h3 class="mb-0">₹{{ total_value|floatformat:2 }}</h3>
+            <small>At purchase price</small>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Warehouse</label>
+            <select name="warehouse" class="form-select">
+                <option value="">All Warehouses</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.id }}" {% if selected_warehouse == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                    {{ warehouse.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Stock Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="low" {% if selected_status == 'low' %}selected{% endif %}>Low Stock</option>
+                <option value="expiring" {% if selected_status == 'expiring' %}selected{% endif %}>Expiring Soon</option>
+                <option value="expired" {% if selected_status == 'expired' %}selected{% endif %}>Expired</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <a href="{% url 'reports:inventory_report' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Clear Filters
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Inventory Table -->
+<div class="data-table">
+    <h5 class="mb-3">Inventory Details</h5>
+    <div class="table-responsive">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Warehouse</th>
+                    <th>Location</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total Value</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inventory in inventory_records %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <strong>{{ inventory.product.name }}</strong>
+                    </td>
+                    <td><code>{{ inventory.product.sku }}</code></td>
+                    <td>{{ inventory.product.category.name|default:"-" }}</td>
+                    <td>{{ inventory.warehouse.name }}</td>
+                    <td>
+                        {% if inventory.storage_location %}
+                        {{ inventory.storage_location.code }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ inventory.quantity }} {{ inventory.product.unit }}</strong></td>
+                    <td>₹{{ inventory.product.purchase_price }}</td>
+                    <td><strong>₹{{ inventory.get_total_value|floatformat:2 }}</strong></td>
+                    <td>
+                        {% if inventory.expiry_date %}
+                        {{ inventory.expiry_date }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inventory.is_expired %}
+                        <span class="badge bg-danger">Expired</span>
+                        {% elif inventory.is_expiring_soon %}
+                        <span class="badge bg-warning">Expiring</span>
+                        {% elif inventory.is_low_stock %}
+                        <span class="badge bg-warning">Low Stock</span>
+                        {% else %}
+                        <span class="badge bg-success">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center text-muted py-4">No inventory records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .btn, .sidebar, .top-navbar, .stat-card .icon { display: none !important; }
+        .main-content { margin-left: 0 !important; }
+        .data-table { box-shadow: none !important; border: 1px solid #ddd; }
+    }
+</style>
+{% endblock %}

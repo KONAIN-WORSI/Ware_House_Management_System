@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Expiry Report - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:reports_dashboard' %}">Reports</a></li>
+<li class="breadcrumb-item active">Expiry Report</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-clock text-warning"></i> Product Expiry Report</h2>
+        <p class="text-muted">Track expiring and expired products</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Alert -->
+{% if total_items > 0 %}
+<div class="alert {% if selected_status == 'expired' %}alert-danger{% else %}alert-warning{% endif %} mb-4">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+        <div>
+            <h5 class="mb-1">
+                {% if selected_status == 'expired' %}
+                ⚠️ {{ total_items }} Expired Products (Loss: ₹{{ total_loss|floatformat:2 }})
+                {% else %}
+                ⚠️ {{ total_items }} Products Expiring Soon
+                {% endif %}
+            </h5>
+            <p class="mb-0">Take immediate action to minimize losses.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filters -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-5">
+            <label class="form-label">Warehouse</label>
+            <select name="warehouse" class="form-select">
+                <option value="">All Warehouses</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.id }}" {% if selected_warehouse == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                    {{ warehouse.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="expiring" {% if selected_status == 'expiring' %}selected{% endif %}>Expiring Soon (0-3 days)</option>
+                <option value="expired" {% if selected_status == 'expired' %}selected{% endif %}>Already Expired</option>
+                <option value="all">All Items with Expiry</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Expiry Table -->
+<div class="data-table">
+    <h5 class="mb-3">
+        {% if selected_status == 'expired' %}
+        Expired Products
+        {% else %}
+        Products Expiring Soon
+        {% endif %}
+        ({{ total_items }} items)
+    </h5>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Urgency</th>
+                    <th>Product</th>
+                    <th>Warehouse</th>
+                    <th>Quantity</th>
+                    <th>Batch</th>
+                    <th>Expiry Date</th>
+                    <th>Days Left</th>
+                    <th>Value at Risk</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inventory in expiry_items %}
+                <tr>
+                    <td>
+                        {% if inventory.is_expired %}
+                        <span class="badge bg-danger">EXPIRED</span>
+                        {% elif inventory.days_until_expiry == 0 %}
+                        <span class="badge bg-danger">TODAY</span>
+                        {% elif inventory.days_until_expiry == 1 %}
+                        <span class="badge bg-warning">TOMORROW</span>
+                        {% else %}
+                        <span class="badge bg-warning">{{ inventory.days_until_expiry }} DAYS</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ inventory.product.name }}</strong><br>
+                        <small class="text-muted">{{ inventory.product.sku }}</small>
+                    </td>
+                    <td>{{ inventory.warehouse.name }}</td>
+                    <td><strong>{{ inventory.quantity }} {{ inventory.product.unit }}</strong></td>
+                    <td>{{ inventory.batch_number|default:"-" }}</td>
+                    <td>{{ inventory.expiry_date }}</td>
+                    <td>
+                        {% if inventory.is_expired %}
+                        <span class="text-danger">EXPIRED</span>
+                        {% else %}
+                        <span class="{% if inventory.days_until_expiry <= 1 %}text-danger{% else %}text-warning{% endif %}">
+                            {{ inventory.days_until_expiry }} days
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td><strong>₹{{ inventory.get_total_value|floatformat:2 }}</strong></td>
+                    <td>
+                        {% if inventory.is_expired %}
+                        <a href="{% url 'inventory:stock_out' %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> Remove
+                        </a>
+                        {% else %}
+                        <a href="{% url 'inventory:stock_out' %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-shipping-fast"></i> Clear
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-5">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="text-muted">No items {% if selected_status == 'expired' %}expired{% else %}expiring soon{% endif %}.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Movement Report - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:reports_dashboard' %}">Reports</a></li>
+<li class="breadcrumb-item active">Stock Movements</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2><i class="fas fa-exchange-alt"></i> Stock Movement Report</h2>
+        <p class="text-muted">Complete transaction history</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{% url 'reports:stock_movement_export' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+            <i class="fas fa-file-csv"></i> Export to CSV
+        </a>
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h6 class="text-muted mb-2">Total Movements</h6>
+            <h3 class="mb-0">{{ total_movements }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h6 class="text-muted mb-2">Stock In</h6>
+            <h3 class="mb-0">{{ stock_in_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card danger">
+            <h6 class="text-muted mb-2">Stock Out</h6>
+            <h3 class="mb-0">{{ stock_out_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <h6 class="text-muted mb-2">Transfers</h6>
+            <h3 class="mb-0">{{ transfers_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-2">
+            <label class="form-label">Movement Type</label>
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                <option value="in" {% if selected_type == 'in' %}selected{% endif %}>Stock In</option>
+                <option value="out" {% if selected_type == 'out' %}selected{% endif %}>Stock Out</option>
+                <option value="transfer" {% if selected_type == 'transfer' %}selected{% endif %}>Transfer</option>
+                <option value="adjustment" {% if selected_type == 'adjustment' %}selected{% endif %}>Adjustment</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Warehouse</label>
+            <select name="warehouse" class="form-select">
+                <option value="">All Warehouses</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.id }}" {% if selected_warehouse == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                    {{ warehouse.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Product</label>
+            <select name="product" class="form-select">
+                <option value="">All Products</option>
+                {% for product in products %}
+                <option value="{{ product.id }}" {% if selected_product == product.id|stringformat:"s" %}selected{% endif %}>
+                    {{ product.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">From Date</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">To Date</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+            <a href="{% url 'reports:stock_movement_report' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Movements Table -->
+<div class="data-table">
+    <h5 class="mb-3">Movement Details (Showing first 100 results)</h5>
+    <div class="table-responsive">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Reference</th>
+                    <th>Type</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Amount</th>
+                    <th>Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movement in movements %}
+                <tr>
+                    <td>{{ movement.movement_date|date:"M d, Y H:i" }}</td>
+                    <td><code>{{ movement.reference_number }}</code></td>
+                    <td>
+                        {% if movement.movement_type == 'in' %}
+                        <span class="badge bg-success">IN</span>
+                        {% elif movement.movement_type == 'out' %}
+                        <span class="badge bg-danger">OUT</span>
+                        {% elif movement.movement_type == 'transfer' %}
+                        <span class="badge bg-primary">TRANSFER</span>
+                        {% else %}
+                        <span class="badge bg-warning">ADJUST</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ movement.product.name }}</strong><br>
+                        <small class="text-muted">{{ movement.product.sku }}</small>
+                    </td>
+                    <td><strong>{{ movement.quantity }} {{ movement.product.unit }}</strong></td>
+                    <td>
+                        {% if movement.from_warehouse %}
+                        {{ movement.from_warehouse.name }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if movement.to_warehouse %}
+                        {{ movement.to_warehouse.name }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>₹{{ movement.total_amount|floatformat:2 }}</td>
+                    <td>
+                        {% if movement.recorded_by %}
+                        {{ movement.recorded_by.get_full_name }}
+                        {% else %}
+                        <span class="text-muted">System</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No movements found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if total_movements > 100 %}
+    <div class="alert alert-info mt-3">
+        <i class="fas fa-info-circle"></i> Showing first 100 of {{ total_movements }} total movements. Use filters to narrow down results or export to CSV for complete data.
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

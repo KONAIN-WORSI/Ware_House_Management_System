@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Profit Analysis - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:reports_dashboard' %}">Reports</a></li>
+<li class="breadcrumb-item active">Profit Analysis</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-dollar-sign text-success"></i> Profit Analysis Report</h2>
+        <p class="text-muted">Revenue, cost, and profit breakdown</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-5">
+            <label class="form-label">From Date</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}" required>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">To Date</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-search"></i> Analyze
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h6 class="text-muted mb-2">Total Revenue</h6>
+            <h3 class="mb-0">₹{{ total_revenue|floatformat:2 }}</h3>
+            <small>From sales</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <h6 class="text-muted mb-2">Total Cost</h6>
+            <h3 class="mb-0">₹{{ total_cost|floatformat:2 }}</h3>
+            <small>Purchase price</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h6 class="text-muted mb-2">Net Profit</h6>
+            <h3 class="mb-0 {% if total_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                ₹{{ total_profit|floatformat:2 }}
+            </h3>
+            <small>Revenue - Cost</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <h6 class="text-muted mb-2">Profit Margin</h6>
+            <h3 class="mb-0">{{ overall_margin|floatformat:1 }}%</h3>
+            <small>Overall margin</small>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Detail Table -->
+<div class="data-table">
+    <h5 class="mb-3">Sales Breakdown ({{ date_from }} to {{ date_to }})</h5>
+    <div class="table-responsive">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Reference</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Revenue</th>
+                    <th>Cost</th>
+                    <th>Profit</th>
+                    <th>Margin %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in sales_data %}
+                <tr>
+                    <td>{{ data.sale.movement_date|date:"M d, Y" }}</td>
+                    <td><code>{{ data.sale.reference_number }}</code></td>
+                    <td>
+                        <strong>{{ data.sale.product.name }}</strong><br>
+                        <small class="text-muted">{{ data.sale.product.sku }}</small>
+                    </td>
+                    <td>{{ data.sale.quantity }} {{ data.sale.product.unit }}</td>
+                    <td>₹{{ data.revenue|floatformat:2 }}</td>
+                    <td>₹{{ data.cost|floatformat:2 }}</td>
+                    <td class="{% if data.profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                        <strong>₹{{ data.profit|floatformat:2 }}</strong>
+                    </td>
+                    <td>
+                        <span class="badge {% if data.margin >= 30 %}bg-success{% elif data.margin >= 15 %}bg-info{% else %}bg-warning{% endif %}">
+                            {{ data.margin|floatformat:1 }}%
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        No sales data found for the selected period
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if sales_data %}
+            <tfoot>
+                <tr class="table-secondary fw-bold">
+                    <td colspan="4">TOTAL</td>
+                    <td>₹{{ total_revenue|floatformat:2 }}</td>
+                    <td>₹{{ total_cost|floatformat:2 }}</td>
+                    <td class="{% if total_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                        ₹{{ total_profit|floatformat:2 }}
+                    </td>
+                    <td>{{ overall_margin|floatformat:1 }}%</td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+{% endblock %}

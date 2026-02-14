@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Warehouse Performance - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:reports_dashboard' %}">Reports</a></li>
+<li class="breadcrumb-item active">Warehouse Performance</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-warehouse"></i> Warehouse Performance Report</h2>
+        <p class="text-muted">Compare performance across warehouses</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="data-table mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-5">
+            <label class="form-label">From Date</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">To Date</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-search"></i> View
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Performance Table -->
+<div class="data-table">
+    <h5 class="mb-3">Performance Metrics ({{ date_from }} to {{ date_to }})</h5>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Warehouse</th>
+                    <th>Current Value</th>
+                    <th>Products</th>
+                    <th>Stock In</th>
+                    <th>Stock In Value</th>
+                    <th>Stock Out</th>
+                    <th>Stock Out Value</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in warehouse_stats %}
+                <tr>
+                    <td>
+                        <strong>{{ stat.warehouse.name }}</strong><br>
+                        <small class="text-muted">{{ stat.warehouse.city }}</small>
+                    </td>
+                    <td><strong>₹{{ stat.inventory_value|floatformat:0 }}</strong></td>
+                    <td>{{ stat.product_count }}</td>
+                    <td>{{ stat.stock_in_count }}</td>
+                    <td>₹{{ stat.stock_in_value|floatformat:0 }}</td>
+                    <td>{{ stat.stock_out_count }}</td>
+                    <td>₹{{ stat.stock_out_value|floatformat:0 }}</td>
+                    <td>
+                        {% if stat.warehouse.status == 'active' %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ stat.warehouse.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No warehouse data available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
