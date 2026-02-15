@@ -33,6 +33,10 @@ urlpatterns = [
     path('reports/', include('reports.urls')),
     # dashboard urls
     path('', include('dashboards.urls')),
+    # suppliers urls
+    path('suppliers/', include('suppliers.urls')),
+    # orders urls
+    path('orders/', include('orders.urls')),
 ]
 
 # media files

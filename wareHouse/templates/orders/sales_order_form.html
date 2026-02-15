@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'orders:sales_order_list' %}">Sales Orders</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4><i class="fas fa-shopping-cart"></i> {{ title }}</h4>
+                <a href="{% url 'orders:sales_order_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-user"></i> Customer Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Customer Name</label>
+                                {{ form.customer_name }}
+                                {% if form.customer_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.customer_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Phone</label>
+                                {{ form.customer_phone }}
+                                {% if form.customer_phone.errors %}
+                                <div class="text-danger small mt-1">{{ form.customer_phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Email</label>
+                                {{ form.customer_email }}
+                                {% if form.customer_email.errors %}
+                                <div class="text-danger small mt-1">{{ form.customer_email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-map-marker-alt"></i> Delivery Address</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                {{ form.delivery_address }}
+                                {% if form.delivery_address.errors %}
+                                <div class="text-danger small mt-1">{{ form.delivery_address.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">City</label>
+                                {{ form.delivery_city }}
+                                {% if form.delivery_city.errors %}
+                                <div class="text-danger small mt-1">{{ form.delivery_city.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">State</label>
+                                {{ form.delivery_state }}
+                                {% if form.delivery_state.errors %}
+                                <div class="text-danger small mt-1">{{ form.delivery_state.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Postal Code</label>
+                                {{ form.delivery_postal_code }}
+                                {% if form.delivery_postal_code.errors %}
+                                <div class="text-danger small mt-1">{{ form.delivery_postal_code.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-warehouse"></i> Order & Warehouse</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Order Date</label>
+                                {{ form.order_date }}
+                                {% if form.order_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.order_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Expected Delivery</label>
+                                {{ form.expected_delivery_date }}
+                                {% if form.expected_delivery_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.expected_delivery_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">From Warehouse</label>
+                                {{ form.from_warehouse }}
+                                {% if form.from_warehouse.errors %}
+                                <div class="text-danger small mt-1">{{ form.from_warehouse.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Status</label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="text-danger small mt-1">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0"><i class="fas fa-money-bill-wave"></i> Financial & Payment</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tax Amount</label>
+                                {{ form.tax_amount }}
+                                {% if form.tax_amount.errors %}
+                                <div class="text-danger small mt-1">{{ form.tax_amount.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Discount Amount</label>
+                                {{ form.discount_amount }}
+                                {% if form.discount_amount.errors %}
+                                <div class="text-danger small mt-1">{{ form.discount_amount.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Delivery Charge</label>
+                                {{ form.delivery_charge }}
+                                {% if form.delivery_charge.errors %}
+                                <div class="text-danger small mt-1">{{ form.delivery_charge.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Payment Method</label>
+                                {{ form.payment_method }}
+                                {% if form.payment_method.errors %}
+                                <div class="text-danger small mt-1">{{ form.payment_method.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Payment Status</label>
+                                {{ form.payment_status }}
+                                {% if form.payment_status.errors %}
+                                <div class="text-danger small mt-1">{{ form.payment_status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-sticky-note"></i> Notes</h6>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label">Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'orders:sales_order_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

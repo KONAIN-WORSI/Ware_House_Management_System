@@ -37,7 +37,7 @@
     <div class="app-layout">
         <aside id="appSidebar" class="app-sidebar">
             <div class="brand">WMS</div>
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush">                       
                 {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action bg-transparent border-0 nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
                 <a href="{% url 'products:product_list' %}" class="list-group-item list-group-item-action bg-transparent border-0 nav-link {% if 'products' in request.path%}active{% endif %}">Products</a>
@@ -47,6 +47,8 @@
                 <a href="{% url 'inventory:stock_movement_list' %}" class="list-group-item list-group-item-action bg-transparent border-0 nav-link {% if request.resolver_match.url_name == 'stock_movement_list' %}active{% endif %}">Movements</a>
                 <a href="{% url 'inventory:alerts' %}" class="list-group-item list-group-item-action bg-transparent border-0 nav-link {% if request.resolver_match.url_name == 'alerts' %}active{% endif %}">Alerts</a>
                 <a href="{% url 'reports:reports_dashboard' %}" class="list-group-item list-group-item-action bg-transparent border-0 nav-link {% if 'reports' in request.path %}active{% endif %}">Reports</a>
+                <a class="nav-link {% if 'suppliers' in request.path %}active{% endif %}" href="{% url 'suppliers:supplier_list' %}">Suppliers</a>
+                <a class="nav-link {% if 'orders' in request.path %}active{% endif %}" href="{% url 'orders:purchase_order_list' %}">Purchase Orders</a>
                 <form action="{% url 'logout' %}" method="post" class="mt-3 px-3">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-light btn-sm w-100">Logout</button>

@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ supplier.name }} - Suppliers - WMS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'suppliers:supplier_list' %}">Suppliers</a></li>
+<li class="breadcrumb-item active">{{ supplier.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="fas fa-truck"></i> {{ supplier.name }}</h2>
+        <p class="text-muted">Code: <code>{{ supplier.code }}</code></p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'suppliers:supplier_update' supplier.pk %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'suppliers:supplier_delete' supplier.pk %}" 
+           class="btn btn-danger"
+           onclick="return confirm('Delete this supplier?')">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+        <a href="{% url 'suppliers:supplier_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <h5 class="mb-1">Total Orders</h5>
+            <h3 class="mb-0">{{ supplier.get_total_orders }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <h5 class="mb-1">Total Purchases</h5>
+            <h3 class="mb-0">₹{{ supplier.get_total_purchases|floatformat:0 }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <h5 class="mb-1">Pending Orders</h5>
+            <h3 class="mb-0">{{ supplier.get_pending_orders }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <h5 class="mb-1">Rating</h5>
+            <h3 class="mb-0">
+                {% for i in "12345" %}
+                    {% if forloop.counter <= supplier.rating %}⭐{% endif %}
+                {% endfor %}
+            </h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Supplier Information -->
+    <div class="col-lg-6">
+        <!-- Contact Information -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-info-circle"></i> Contact Information</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Company Name</label>
+                    <p class="mb-0"><strong>{{ supplier.name }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Supplier Code</label>
+                    <p class="mb-0"><code>{{ supplier.code }}</code></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Contact Person</label>
+                    <p class="mb-0">{{ supplier.contact_person|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Phone</label>
+                    <p class="mb-0"><strong>{{ supplier.phone }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Alternate Phone</label>
+                    <p class="mb-0">{{ supplier.alternate_phone|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Email</label>
+                    <p class="mb-0">
+                        {% if supplier.email %}
+                        <a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Address -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-map-marker-alt"></i> Address</h5>
+            
+            <p class="mb-2">{{ supplier.address }}</p>
+            <p class="mb-0">
+                {{ supplier.city }}, {{ supplier.state }} {{ supplier.postal_code }}<br>
+                {{ supplier.country }}
+            </p>
+        </div>
+        
+        <!-- Business Details -->
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-briefcase"></i> Business Details</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small">Company Registration</label>
+                    <p class="mb-0">{{ supplier.company_registration|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Tax ID (VAT/TIN)</label>
+                    <p class="mb-0">{{ supplier.tax_id|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Payment Terms</label>
+                    <p class="mb-0">{{ supplier.payment_terms|default:"-" }}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Credit Limit</label>
+                    <p class="mb-0"><strong>₹{{ supplier.credit_limit|floatformat:2 }}</strong></p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Status</label>
+                    <p class="mb-0">
+                        {% if supplier.status == 'active' %}
+                        <span class="badge bg-success">{{ supplier.get_status_display }}</span>
+                        {% elif supplier.status == 'inactive' %}
+                        <span class="badge bg-secondary">{{ supplier.get_status_display }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ supplier.get_status_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="text-muted small">Rating</label>
+                    <p class="mb-0">{{ supplier.get_rating_display }}</p>
+                </div>
+                
+                {% if supplier.notes %}
+                <div class="col-12">
+                    <label class="text-muted small">Notes</label>
+                    <p class="mb-0">{{ supplier.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products & Orders -->
+    <div class="col-lg-6">
+        <!-- Supplier Products -->
+        <div class="data-table mb-4">
+            <h5 class="mb-3"><i class="fas fa-box"></i> Products Supplied</h5>
+            
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>MOQ</th>
+                            <th>Lead Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sp in supplier_products %}
+                        <tr>
+                            <td>
+                                <strong>{{ sp.product.name }}</strong>
+                                {% if sp.is_preferred %}
+                                <span class="badge bg-primary">Preferred</span>
+                                {% endif %}
+                            </td>
+                            <td>₹{{ sp.unit_price }}</td>
+                            <td>{{ sp.minimum_order_quantity }} {{ sp.product.unit }}</td>
+                            <td>{{ sp.lead_time_days }} days</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No products linked</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Recent Purchase Orders -->
+        <div class="data-table">
+            <h5 class="mb-3"><i class="fas fa-shopping-cart"></i> Recent Purchase Orders</h5>
+            
+            <div class="list-group list-group-flush">
+                {% for order in recent_orders %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>{{ order.po_number }}</strong>
+                            {% if order.status == 'completed' %}
+                            <span class="badge bg-success ms-2">{{ order.get_status_display }}</span>
+                            {% elif order.status == 'pending' %}
+                            <span class="badge bg-warning ms-2">{{ order.get_status_display }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary ms-2">{{ order.get_status_display }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ order.order_date|date:"M d, Y" }}</small>
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <small class="text-muted">Amount:</small>
+                            <strong>₹{{ order.total_amount|floatformat:2 }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Items:</small>
+                            <strong>{{ order.get_items_count }}</strong>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No purchase orders yet</p>
+                {% endfor %}
+            </div>
+            
+            {% if recent_orders %}
+            <div class="text-center mt-3">
+                <a href="{% url 'orders:purchase_order_list' %}?supplier={{ supplier.id }}" class="btn btn-sm btn-outline-primary">
+                    View All Orders
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
