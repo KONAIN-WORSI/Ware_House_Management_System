@@ -26,9 +26,14 @@ SECRET_KEY = 'django-insecure-change-me-for-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'ngrok-free.dev',
+    'unrancourous-craniometric-kristopher.ngrok-free.dev',
+]
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000',  'https://unrancourous-craniometric-kristopher.ngrok-free.dev']
 
 
 # Application definition
